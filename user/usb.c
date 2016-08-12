@@ -427,10 +427,30 @@ void handle_ack( uint32_t this_token, struct usb_internal_state_struct * ist )
 	ist->last_sent_qty = 0;
 }
 
+int ReadRSRIntenable()
+{
+	int r;
+        asm volatile ("\
+			rsr.intenable %[out]\n\
+	" : [out] "=r"(r) : : "a9" );
+
+        return r; //rsr a9, ccount //rsr a11, ccount
+}
+
+extern void * _UserExceptionVector_1;
+extern void * rr_replace_call0;
+extern void * gpint1;
+
+void NotAnInterrupt()
+{
+	GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, GPIO_REG_READ(GPIO_STATUS_ADDRESS) );
+}
 
 void  ICACHE_FLASH_ATTR init_usb()
 {
+	printf( "A %08x\n", ReadRSRIntenable( ) );
     ETS_GPIO_INTR_DISABLE();                                           //Close the GPIO interrupt
+	printf( "B %08x\n", ReadRSRIntenable( ) );
 
 	PIN_FUNC_SELECT(PERIPHSDPLUS,FUNCDPLUS); //D- (needs pullup)
 	PIN_FUNC_SELECT(PERIPHSDMINUS,FUNCDMINUS); //D+
@@ -440,7 +460,7 @@ void  ICACHE_FLASH_ATTR init_usb()
 	PIN_PULLUP_EN( PERIPHSDPLUS );
 
     GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(0));
-    ETS_GPIO_INTR_ATTACH(gpio_intr,NULL);                                //Attach the gpio interrupt.
+    ETS_GPIO_INTR_ATTACH(NotAnInterrupt,NULL);                                //Attach the gpio interrupt.
     gpio_pin_intr_state_set(GPIO_ID_PIN(DMINUS),GPIO_PIN_INTR_POSEDGE);  //Rising Edge Trigger.
 
 	//Forcibly disconnect from bus.
@@ -450,6 +470,53 @@ void  ICACHE_FLASH_ATTR init_usb()
 	ets_delay_us( 10000 );
 	gp[GPIO_OFFSET_DIR_IN/4] = _BV(DPLUS) | _BV(DMINUS);
 
-    ETS_GPIO_INTR_ENABLE();
 
+	int i;
+	uint8_t * ovect = (uint8_t*)0x40100050;
+	uint32_t * ovect32 = (uint32_t*)0x40100050;
+	uint8_t * replacevect8 = (uint8_t*)(&replacement_user_vect);
+	uint8_t * targ8 = (uint8_t*)(&_UserExceptionVector_1);
+	uint8_t vect8copy[16]; //We only need 16 bytes.
+	ets_memcpy( vect8copy, (&replacement_user_vect), 0x20 );
+
+	//+1 to +4   (When 'call' instruction is at +3)
+	//+5 to +8   (When 'call' instruction is at +5)
+	//+5 to +8   (When 'call' instruction is at +6)
+	//+9 to +12  (When 'call' instruction is at +9)
+	//+13 to +16 (When 'call' instruction is at +12)
+	int delta_gp = ((uint8_t*)&gpio_intr) - (ovect+11); 
+	int delta_ue =               targ8 - (ovect+14); 
+
+	delta_ue = (delta_ue & ~0x03)<<4;
+	delta_gp = (delta_gp & ~0x03)<<4;
+
+	//for call0 to the gpio handler.
+	vect8copy[9] = 0x05 | (delta_gp & 0xff); //lsb of jump
+	vect8copy[10] = (delta_gp >> 8)&0xff; //...
+	vect8copy[11] = (delta_gp >> 16)&0xff; //msb of jump.
+
+	//For call0 to the normal handler
+	vect8copy[12] = 0x05 | (delta_ue & 0xff); //lsb of jump
+	vect8copy[13] = (delta_ue >> 8)&0xff; //...
+	vect8copy[14] = (delta_ue >> 16)&0xff; //msb of jump.
+
+
+	printf( "%08x %08x %08x\n", ovect, replacevect8, delta_ue);
+	for( i = 0; i <0x10; i++ )
+	{
+		printf( "%02x ", vect8copy[i] );
+	}
+
+	ovect32[0] = ((uint32_t*)vect8copy)[0];
+	ovect32[1] = ((uint32_t*)vect8copy)[1];
+	ovect32[2] = ((uint32_t*)vect8copy)[2];
+	ovect32[3] = ((uint32_t*)vect8copy)[3];
+
+	printf( "C %08x\n", ReadRSRIntenable( ) );
+    ETS_GPIO_INTR_ENABLE();
+	printf( "D %08x\n", ReadRSRIntenable( ) );
+
+	printf( "\n" );
 }
+
+

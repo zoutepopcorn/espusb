@@ -12,7 +12,7 @@ SRCS:=driver/uart.c \
 	common/mdns.c \
 	common/mfs.c \
 	user/custom_commands.c \
-	user/usb_asm_1bit.S \
+	user/usb_asm_3bit.S \
 	user/usb.c \
 	user/user_main.c 
 
@@ -34,8 +34,6 @@ CFLAGS:=-mlongcalls -I$(SDK)/include -Imyclib  -I. -Iinclude -Iuser -Os -I$(SDK)
 #
 
 LDFLAGS_CORE:=\
-	-nostdlib \
-	-Wl,--relax -Wl,--gc-sections \
 	-L$(XTLIB) \
 	-L$(XTGCCLIB) \
 	$(SDK)/lib/liblwip.a \
@@ -54,7 +52,10 @@ LDFLAGS_CORE:=\
 
 LINKFLAGS:= \
 	$(LDFLAGS_CORE) \
-	-B$(XTLIB)
+	-B$(XTLIB) \
+	-nostdlib \
+	-Wl,--relax,--gc-sections \
+
 
 #image.elf : $(OBJS)
 #	$(PREFIX)ld $^ $(LDFLAGS) -o $@

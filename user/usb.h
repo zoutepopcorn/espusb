@@ -114,6 +114,8 @@ void handle_ack( uint32_t this_token, struct usb_internal_state_struct * ist );
 
 extern uint32_t usb_reinstate;
 
+extern void * replacement_user_vect;
+
 #else
 
 .global usb_send_data;
