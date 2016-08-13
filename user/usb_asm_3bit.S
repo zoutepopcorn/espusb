@@ -70,7 +70,7 @@ delayer_ccount:
 .global gpio_intr
 .align 4
 gpio_intr:
-	_addi a1, a1, -68
+//	_addi a1, a1, -68
 	_s32i.n a0, a1, 0   // Working reg
 	_s32i.n a2, a1, 4   // Running byte
 	_s32i.n a3, a1, 8   // Running CRC
@@ -84,12 +84,12 @@ gpio_intr:
 	_s32i.n a11, a1, 40 // GPIO_BASE
 	_s32i.n a12, a1, 44 // CRC Polynomial
 	_s32i.n a13, a1, 48 // Debug Output Pin
-	_s32i.n a14, a1, 52 // Main Ramtable
+//	_s32i.n a14, a1, 52 // Main Ramtable
 	_s32i.n a15, a1, 56 // Timing
 
 	DISABLE_INTERRUPTS_LCL  	//Uses stack space 60 and 64 
 
-	movi       a14, usb_ramtable	//This is actually very slow.
+//	movi       a14, usb_ramtable	//This is actually very slow.
 
 
 usb_reinstate: //Come back up here if we are expecting more data.
@@ -500,16 +500,21 @@ DEBUG_HIGH
 
 
 //This code will be memcpy'd over top of _UserExceptionVector, since I can't figure out how to override it with GCC.
+.section .relocvec.text
 .global replacement_user_vect
 .align 4
+ramtable_pos:
+	.long usb_ramtable
 replacement_user_vect:
 //Original code:
 	_wsr.excsave1	a0
 	_rsr.interrupt a0
 	_bbci a0, 4, not_a_gpio_interrupt
-	_nop //Will get replaced with a "call0" to my code. (TODO: Can this be a jump?)
+	_addi a1, a1, -68
+	_s32i.n a14, a1, 52 // Main Ramtable
+	l32r       a14, ramtable_pos	//This is actually very slow.
+	_j gpio_intr
 not_a_gpio_interrupt:
 	_call0 _UserExceptionVector_1
-	_ill
-	_ill //Zero padding to make it so we can see it clearly in a memory dump.
+
 

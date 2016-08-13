@@ -48,7 +48,7 @@ LDFLAGS_CORE:=\
 	$(SDK)/lib/libmain.a \
 	$(SDK)/lib/libpp.a \
 	$(XTGCCLIB) \
-	-T $(SDK)/ld/eagle.app.v6.ld
+	-T custom.ld
 
 LINKFLAGS:= \
 	$(LDFLAGS_CORE) \

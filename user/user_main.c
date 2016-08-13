@@ -168,6 +168,7 @@ void user_init(void)
 	//ets_delay_us(200000);
 	//uart0_sendStr("\r\n\033c" );
 	uart0_sendStr("esp8266 usb driver\r\n");
+	uart0_sendStr("Hello!!!!\r\n");
 	system_update_cpu_freq( 80 );
 //#define PROFILE
 #ifdef PROFILE

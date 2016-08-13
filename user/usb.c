@@ -470,7 +470,7 @@ void  ICACHE_FLASH_ATTR init_usb()
 	ets_delay_us( 10000 );
 	gp[GPIO_OFFSET_DIR_IN/4] = _BV(DPLUS) | _BV(DMINUS);
 
-
+/*
 	int i;
 	uint8_t * ovect = (uint8_t*)0x40100050;
 	uint32_t * ovect32 = (uint32_t*)0x40100050;
@@ -484,6 +484,7 @@ void  ICACHE_FLASH_ATTR init_usb()
 	//+5 to +8   (When 'call' instruction is at +6)
 	//+9 to +12  (When 'call' instruction is at +9)
 	//+13 to +16 (When 'call' instruction is at +12)
+__asm__ __volatile__("sectest:");
 	int delta_gp = ((uint8_t*)&gpio_intr) - (ovect+11); 
 	int delta_ue =               targ8 - (ovect+14); 
 
@@ -513,9 +514,9 @@ void  ICACHE_FLASH_ATTR init_usb()
 	ovect32[3] = ((uint32_t*)vect8copy)[3];
 
 	printf( "C %08x\n", ReadRSRIntenable( ) );
-    ETS_GPIO_INTR_ENABLE();
 	printf( "D %08x\n", ReadRSRIntenable( ) );
-
+*/
+    ETS_GPIO_INTR_ENABLE();
 	printf( "\n" );
 }
 

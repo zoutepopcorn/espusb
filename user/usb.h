@@ -147,21 +147,21 @@ extern void * replacement_user_vect;
 #define GPIO_OFFSET_GPIO_STATUS  0x1c
 #define GPIO_OFFSET_GPIO_STATUS_W1TC 0x24
 
+//	rsil a0, 15; \
+	s32i a0, a1, 60; \
+	isync; \
+	l32i a0, a1, 60; \
+	wsr a0, ps; \
+	isync;
 
 //These interrupts don't work well.
 #define DISABLE_INTERRUPTS_LCL \
-	rsil a0, 15; \
-	s32i a0, a1, 60; \
 	rsr a0, SAR; \
 	s32i a0, a1, 64;
 
 #define ENABLE_INTERRUPTS_LCL \
 	l32i a0, a1, 64; \
 	wsr a0, SAR; \
-	isync; \
-	l32i a0, a1, 60; \
-	wsr a0, ps; \
-	isync;
 
 #endif
 
