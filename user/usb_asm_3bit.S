@@ -23,8 +23,8 @@
 #include "usb_table_1bit.h"
 
 
-#define DEBUG_HIGH    _s32i.n	a13, a11, GPIO_OFFSET_SET
-#define DEBUG_LOW     _s32i.n	a13, a11, GPIO_OFFSET_CLEAR
+#define DEBUG_HIGH    _s32i.n	a15, a11, GPIO_OFFSET_SET
+#define DEBUG_LOW     _s32i.n	a15, a11, GPIO_OFFSET_CLEAR
 
 
 //				8 works, 9 is spotty at best.
@@ -69,25 +69,75 @@ delayer_ccount:
 
 .global gpio_intr
 .align 4
-gpio_intr:
-//	_addi a1, a1, -68
-	_s32i.n a0, a1, 0   // Working reg
-	_s32i.n a2, a1, 4   // Running byte
-	_s32i.n a3, a1, 8   // Running CRC
-	_s32i.n a4, a1, 12  // Anding mask
-	_s32i.n a5, a1, 16  // Status Word (for table)
+
+//Entering into here:   a0 = safe (backed up in register)
+//						a1 = stack
+//                     a14 = pointer to usbtable
+gpio_intr:  
+	//Disable interrupts.
+	_rsr a0, SAR;
+	_s32i a0, a1, 64;
 	_s32i.n a6, a1, 20  // A Working register)
 	_s32i.n a7, a1, 24  // The current byte ready to be written out.
 	_s32i.n a8, a1, 28  // Buffer Output Offset
 	_s32i.n a9, a1, 32  // Loop Amount
 	_s32i.n a10, a1, 36 // Timing-off-by-three (For doing the 53/54 dance)
 	_s32i.n a11, a1, 40 // GPIO_BASE
+	_l32i.n a11, a14, GPIO_BASE_OFFSET
+
+
 	_s32i.n a12, a1, 44 // CRC Polynomial
 	_s32i.n a13, a1, 48 // Debug Output Pin
-//	_s32i.n a14, a1, 52 // Main Ramtable
-	_s32i.n a15, a1, 56 // Timing
+	//_s32i.n a14, a1, 52 // Main Ramtable
+	_s32i.n a15, a1, 56 // Timing*/
 
-	DISABLE_INTERRUPTS_LCL  	//Uses stack space 60 and 64 
+	movi a9, 0x60000330
+	_movi.n    a15, 1<<DEBUGPIN
+	DEBUG_HIGH
+	_s32i.n a2, a1, 4   // Running byte
+	_s32i.n a3, a1, 8   // Running CRC
+	_s32i.n a4, a1, 12  // Anding mask
+	_s32i.n a5, a1, 16  // Status Word (for table)
+
+
+usb_reinstate:
+
+
+
+	_l32i.n	a6, a14, 4 //Offset for output table
+	_movi		a5, 100
+usb_loop:
+
+	_nop
+	_nop
+//	_extui a0, a0, DMINUS, 2
+//	_s8i a0, a6, 0
+//	_addi.n a6, a6, 1
+
+	//_l32i a0, a11, GPIO_OFFSET_INPUT
+//	_extui a0, a0, DMINUS, 2
+//	_s8i a0, a6, 0
+//	_addi.n a6, a6, 1
+
+	//_l32i a0, a11, GPIO_OFFSET_INPUT
+	//_nop
+	_l8ui a0, a9, 0 //GPIO_OFFSET_INPUT
+
+	_nop
+	_nop
+//	_extui a0, a0, DMINUS, 2
+//	_s8i a0, a6, 0
+//	_addi.n a6, a6, 1
+
+	_addi.n a5, a5, -1
+	_bnez a5, usb_loop
+
+	DEBUG_LOW
+
+
+
+#if 0
+//	DISABLE_INTERRUPTS_LCL  	//Uses stack space 60 and 64 
 
 //	movi       a14, usb_ramtable	//This is actually very slow.
 
@@ -263,11 +313,17 @@ end_gpio_intr:
 	_l32i.n    a11, a14, GPIO_BASE_OFFSET
 	_l32i.n a4, a11, GPIO_OFFSET_GPIO_STATUS
 	_s32i.n a4, a11, GPIO_OFFSET_GPIO_STATUS_W1TC
+#endif
+
+give_up:
+	_l32i.n a0, a11, GPIO_OFFSET_GPIO_STATUS
+	_s32i.n a0, a11, GPIO_OFFSET_GPIO_STATUS_W1TC
+
+	//Re-enable interrupts.
+	l32i a0, a1, 64;
+	wsr a0, SAR;
 
 
-	ENABLE_INTERRUPTS_LCL
-	_l32i.n a0, a1, 0
-	_l32i.n a2, a1, 4
 	_l32i.n a3, a1, 8
 	_l32i.n a4, a1, 12
 	_l32i.n a5, a1, 16

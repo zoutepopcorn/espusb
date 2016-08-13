@@ -440,6 +440,8 @@ int ReadRSRIntenable()
 extern void * _UserExceptionVector_1;
 extern void * rr_replace_call0;
 extern void * gpint1;
+uint8_t usb_tmpbuffer[128];
+
 
 void NotAnInterrupt()
 {
@@ -456,12 +458,15 @@ void  ICACHE_FLASH_ATTR init_usb()
 	PIN_FUNC_SELECT(PERIPHSDMINUS,FUNCDMINUS); //D+
 
     PIN_DIR_INPUT = _BV(DMINUS)|_BV(DPLUS);
+//	PIN_PULLUP_DIS( PERIPHSDMINUS );
+//	PIN_PULLUP_EN( PERIPHSDPLUS );  (LOW SPEED) <<< WAIT This looks WRONG
+
 	PIN_PULLUP_DIS( PERIPHSDMINUS );
 	PIN_PULLUP_EN( PERIPHSDPLUS );
 
     GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(0));
     ETS_GPIO_INTR_ATTACH(NotAnInterrupt,NULL);                                //Attach the gpio interrupt.
-    gpio_pin_intr_state_set(GPIO_ID_PIN(DMINUS),GPIO_PIN_INTR_POSEDGE);  //Rising Edge Trigger.
+    gpio_pin_intr_state_set(GPIO_ID_PIN(DPLUS),GPIO_PIN_INTR_POSEDGE);  //Rising Edge Trigger.
 
 	//Forcibly disconnect from bus.
 	volatile uint32_t * gp = (volatile uint32_t*)GPIO_BASE_REG;

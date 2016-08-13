@@ -92,8 +92,15 @@ static void ICACHE_FLASH_ATTR myTimer(void *arg)
 	usb_internal_state.eps[2].send = 1;
 
 
+//uint8_t usb_tmpbuffer[128];
+	for( i = 0; i < 40; i++ )
+	{
+		printf( "%1x", usb_tmpbuffer[i] );
+	}
+	printf( "\n");
+
 #if 1
-	printf( "(%08x)(%08x)\n", usb_internal_state.debug, usb_internal_state.eps[0].size_in  );
+//	printf( "(%08x)(%08x)\n", usb_internal_state.debug, usb_internal_state.eps[0].size_in  );
 //	for( i = 0; i < 16; i++ )
 //		printf( "%02x ", usb_internal_state.usb_buffer[i] );
 //	printf( "\n" );
@@ -169,12 +176,11 @@ void user_init(void)
 	//uart0_sendStr("\r\n\033c" );
 	uart0_sendStr("esp8266 usb driver\r\n");
 	uart0_sendStr("Hello!!!!\r\n");
-	system_update_cpu_freq( 80 );
+	system_update_cpu_freq(160);
 //#define PROFILE
 #ifdef PROFILE
 	uint32_t k = 0x89abcdef;
 	uint8_t * g  = (uint8_t*)&k;
- system_update_cpu_freq(160);
 	my_table[0] = 5;
 	printf( "%02x %02x %02x %02x\n", g[0], g[1], g[2], g[3] );
 	uint32_t rr = time_ccount();

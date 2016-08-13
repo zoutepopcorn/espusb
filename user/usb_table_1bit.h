@@ -17,9 +17,10 @@
 #define CRC5_CHECK   0x06
 #ifndef _INASM_
 
+
 uint32_t usb_ramtable[31] __attribute__((aligned(16))) = {
 	GPIO_BASE_REG, // Base reg for all GPIO (Offset 0)
-	0, // Reserved                          (Offset 1)
+	(uint32_t)&usb_tmpbuffer, // Reserved                          (Offset 1)
 	0, // Reserved                          (Offset 2)
 	100, // Loop Count                      (Offset 3)
 	0, // Reserved                          (Offset 4)

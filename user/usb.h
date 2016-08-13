@@ -30,6 +30,8 @@
 
 #define EMPTY_SEND_BUFFER (uint8_t*)1
 
+extern uint8_t usb_tmpbuffer[128];
+
 struct usb_endpoint
 {
 	const uint8_t * ptr_in;		// Pointer to "IN" data (US->PC)
